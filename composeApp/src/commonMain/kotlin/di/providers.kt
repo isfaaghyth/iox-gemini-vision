@@ -7,6 +7,7 @@ import domain.usecase.GetContentWithImageUseCase
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import ui.AppViewModel
+import utils.AppCoroutineDispatchers
 
 object Providers : KoinComponent {
 
@@ -14,5 +15,11 @@ object Providers : KoinComponent {
     private val getContentWithImageUseCase: GetContentWithImageUseCase by inject()
 
     @Composable
-    fun viewModel() = viewModel { AppViewModel(getContentUseCase, getContentWithImageUseCase) }
+    fun viewModel() = viewModel {
+        AppViewModel(
+            getContentUseCase,
+            getContentWithImageUseCase,
+            AppCoroutineDispatchers
+        )
+    }
 }

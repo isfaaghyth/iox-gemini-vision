@@ -31,7 +31,7 @@ data class ContentRequestBody(
         fun createTextAndImageAttachmentRequest(text: String, image: ByteArray): String {
             val parts = mutableListOf<RequestContentPart>()
             // command
-            parts.add(RequestContentPart(text = text))
+            parts.add(RequestContentPart(text = text + ". catatan, hindari simbol asterisk (jika ada), dan gunakan bahasa yang friendly."))
             
             // attachment
             parts.add(

@@ -45,13 +45,15 @@ fun GeminiApp(
 
             composable(route = AppRoute.Main.name) {
                 MainScreen(
-                    chats = state.chats
-                ) { byteArray, prompt ->
-                    val byteArrayImage = byteArray ?: return@MainScreen
-                    viewModel.sendAction(
-                        AppEvent.RequestWithAttachment(prompt, byteArrayImage)
-                    )
-                }
+                    chats = state.chats,
+                    onPromptChatAdded = {
+                        viewModel.sendAction(AppEvent.AddPromptInChatStack(it))
+                    },
+                    onPromptRequest = { byteArray, prompt ->
+                        val byteArrayImage = byteArray ?: return@MainScreen
+                        viewModel.sendAction(AppEvent.RequestWithAttachment(prompt, byteArrayImage))
+                    }
+                )
             }
         }
     }

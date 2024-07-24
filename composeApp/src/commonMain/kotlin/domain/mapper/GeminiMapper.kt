@@ -14,7 +14,8 @@ object GeminiMapper {
             ?.text
 
         return ContentModel(
-            text = responseText ?: ""
+            text = responseText ?: "",
+            succeed = true
         )
     }
 }

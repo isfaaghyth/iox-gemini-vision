@@ -49,11 +49,11 @@ import utils.TextToSpeech
 @Composable
 fun MainScreen(
     chats: List<AppState>,
+    onPromptChatAdded: (String) -> Unit,
     onPromptRequest: (ByteArray?, String) -> Unit
 ) {
     var prompt by rememberSaveable { mutableStateOf("") }
     var latestContentToSpeech by rememberSaveable { mutableStateOf("") }
-    var keyboardVisibility by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     val state = rememberPeekabooCameraState(
@@ -61,11 +61,6 @@ fun MainScreen(
             onPromptRequest(it, prompt)
         }
     )
-
-    if (keyboardVisibility) {
-        HideKeyboard()
-        keyboardVisibility = false
-    }
 
     if (latestContentToSpeech.isNotEmpty() && latestContentToSpeech != LOADING_CONTENT) {
         TextToSpeech(latestContentToSpeech)
@@ -111,7 +106,7 @@ fun MainScreen(
             )
         ) {
             items(chats) { chat ->
-                latestContentToSpeech = chat.content
+                if (chat.isModel) latestContentToSpeech = chat.content
                 ChatItem(chat)
             }
         }
@@ -127,7 +122,7 @@ fun MainScreen(
                 }
         ) {
             state.capture()
-            keyboardVisibility = !keyboardVisibility
+            onPromptChatAdded(it)
             prompt = it
         }
     }
