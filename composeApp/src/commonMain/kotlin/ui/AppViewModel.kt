@@ -4,8 +4,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import domain.model.ContentModel
-import domain.usecase.GetContentUseCase
-import domain.usecase.GetContentWithImageUseCase
+import domain.domain.GetContentWithImageUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,12 +17,12 @@ import ui.uimodel.AppState
 import ui.uimodel.AppStateModel
 import ui.uimodel.ChatItemModel
 import ui.uimodel.ErrorAppState
+import ui.uimodel.ListeningAppState
 import ui.uimodel.LoadingAppState
 import utils.CoroutineDispatchers
 import utils.lruAdd
 
 class AppViewModel(
-    private val getContentUseCase: GetContentUseCase,
     private val getContentWithImageUseCase: GetContentWithImageUseCase,
     private val dispatchers: CoroutineDispatchers
 ) : ViewModel() {
@@ -51,19 +50,17 @@ class AppViewModel(
                 setAndUpdateChatList(event.command, false)
                 setAndUpdateList(LoadingAppState)
             }
-            is AppEvent.BasicRequest -> onBasicRequest(event.command)
-            is AppEvent.RequestWithAttachment -> onRequestWithImageAttachment(event.command, event.image)
-            is AppEvent.Reset -> disposeLastState()
-        }
-    }
-
-    private fun onBasicRequest(command: String) {
-        viewModelScope.launch {
-            val result = getContentUseCase(command)
-
-            withContext(dispatchers.main) {
-                onRequestProceed(result)
+            is AppEvent.StartToListen -> {
+                if (event.isAdded.value) {
+                    setAndUpdateList(ListeningAppState)
+                } else {
+                    removeAppStateByType<ListeningAppState>()
+                }
             }
+            is AppEvent.RequestWithAttachment -> {
+                onRequestWithImageAttachment(event.command, event.image)
+            }
+            is AppEvent.Reset -> disposeLastState()
         }
     }
 
@@ -101,8 +98,21 @@ class AppViewModel(
         _state.update { it.copy(chats = _chatList) }
     }
 
+    private inline fun <reified T : AppState> removeAppStateByType() {
+        val element = _chatList.find { it is T }
+        val index = _chatList.indexOf(element)
+
+        if (index != -1) {
+            _chatList.removeAt(index)
+        }
+
+        _state.update { it.copy(chats = _chatList) }
+    }
+
     private fun removeLoadingAndErrorUiModel() {
-        _chatList.removeAll { it is LoadingAppState || it is ErrorAppState }
+        _chatList.removeAll {
+            it is LoadingAppState || it is ErrorAppState || it is ListeningAppState
+        }
     }
 
     private fun disposeLastState() {

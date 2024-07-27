@@ -49,6 +49,9 @@ fun GeminiApp(
                     onPromptChatAdded = {
                         viewModel.sendAction(AppEvent.AddPromptInChatStack(it))
                     },
+                    onListeningState = {
+                        viewModel.sendAction(AppEvent.StartToListen(it))
+                    },
                     onPromptRequest = { byteArray, prompt ->
                         val byteArrayImage = byteArray ?: return@MainScreen
                         viewModel.sendAction(AppEvent.RequestWithAttachment(prompt, byteArrayImage))

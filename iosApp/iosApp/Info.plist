@@ -48,5 +48,7 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>$(PRODUCT_NAME) uses camera to setup profile picture of the user.</string>
+	<key>NSMicrophoneUsageDescription</key>
+    <string>$(PRODUCT_NAME) uses microphone to record audio.</string>
 </dict>
 </plist>

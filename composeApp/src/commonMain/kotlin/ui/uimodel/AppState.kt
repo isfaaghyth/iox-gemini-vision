@@ -1,25 +1,25 @@
 package ui.uimodel
 
-const val LOADING_CONTENT = "..."
+data class AppStateModel(
+    val chats: List<AppState> = emptyList()
+)
 
 interface AppState {
     val content: String
     val isModel: Boolean
 }
 
-data class AppStateModel(
-    val chats: List<AppState> = emptyList()
+class DefaultAppState(
+    override val content: String = "",
+    override val isModel: Boolean = true
+) : AppState
+
+data object LoadingAppState : AppState by DefaultAppState("...")
+data object ErrorAppState : AppState by DefaultAppState()
+data object ListeningAppState : AppState by DefaultAppState(
+    content = "Saya mendengar...",
+    isModel = false
 )
-
-data object LoadingAppState : AppState {
-    override val content: String get() = LOADING_CONTENT
-    override val isModel: Boolean get() = true
-}
-
-data object ErrorAppState : AppState {
-    override val content: String get() = ""
-    override val isModel: Boolean get() = true
-}
 
 data class ChatItemModel(
     override val content: String = "",

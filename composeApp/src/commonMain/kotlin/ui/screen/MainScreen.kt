@@ -1,11 +1,6 @@
 package ui.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,68 +8,101 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material.Button
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.preat.peekaboo.ui.camera.PeekabooCamera
 import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
-import ui.uimodel.LOADING_CONTENT
+import ui.screen.component.ChatItem
+import ui.screen.component.ChatWaitingDots
+import ui.screen.component.PromptBoxContainer
 import ui.uimodel.AppState
-import utils.HideKeyboard
+import ui.uimodel.ChatItemModel
+import ui.uimodel.LoadingAppState
 import utils.TextToSpeech
+import utils.speech.SpeechRecognition
+import utils.speech.SpeechRecognitionListener
+import kotlin.jvm.JvmInline
+
+@JvmInline
+value class IsAdded(val value: Boolean)
 
 @Composable
 fun MainScreen(
     chats: List<AppState>,
+    modifier: Modifier = Modifier,
     onPromptChatAdded: (String) -> Unit,
+    onListeningState: (IsAdded) -> Unit,
     onPromptRequest: (ByteArray?, String) -> Unit
 ) {
-    var prompt by rememberSaveable { mutableStateOf("") }
-    var latestContentToSpeech by rememberSaveable { mutableStateOf("") }
+    /**
+     * Both variables area to handled the speech recognition.
+     */
+    var triggerStartToSpeech by rememberSaveable { mutableStateOf(false) }
+    var speechResult by rememberSaveable { mutableStateOf("") }
 
-    val listState = rememberLazyListState()
+    // A state used to trigger to text-to-speech
+    var lastRespond by rememberSaveable { mutableStateOf("") }
+
+    // Camera state to get ByteArray result
     val state = rememberPeekabooCameraState(
         onCapture = {
-            onPromptRequest(it, prompt)
+            onPromptRequest(it, speechResult)
         }
     )
 
-    if (latestContentToSpeech.isNotEmpty() && latestContentToSpeech != LOADING_CONTENT) {
-        TextToSpeech(latestContentToSpeech)
-        latestContentToSpeech = ""
+    // Speech state for voice recognition
+    val speech = SpeechRecognition(object : SpeechRecognitionListener {
+
+        override fun onSpeechReady() {
+            onListeningState(IsAdded(true))
+        }
+
+        override fun onSpeechEnd() {
+            onListeningState(IsAdded(false))
+        }
+
+        override fun onResult(result: String) {
+            speechResult = result
+            triggerStartToSpeech = false
+
+            onPromptChatAdded(result)
+            state.capture()
+        }
+
+        override fun onError(message: String) {
+            triggerStartToSpeech = false
+        }
+    })
+
+    if (lastRespond.isNotEmpty()) {
+        TextToSpeech(lastRespond)
+        lastRespond = ""
     }
+
+    if (triggerStartToSpeech) {
+        speech.onStartToSpeech()
+    }
+
+    val listState = rememberLazyListState()
 
     LaunchedEffect(chats.size) {
         listState.animateScrollToItem(chats.size)
     }
 
-    ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-        val (overlay, promptBox, camera, messages) = createRefs()
+    ConstraintLayout(modifier = modifier.fillMaxSize()) {
+        val (promptBox, camera, messages) = createRefs()
 
-        // Cemara
+        // Camera
         PeekabooCamera(
             state = state,
             modifier = Modifier
@@ -105,9 +133,13 @@ fun MainScreen(
                 horizontal = 18.dp
             )
         ) {
-            items(chats) { chat ->
-                if (chat.isModel) latestContentToSpeech = chat.content
-                ChatItem(chat)
+            items(chats) {
+                ChatItem(it)
+
+                // trigger text to speech
+                if (it.isModel && it is ChatItemModel) {
+                    lastRespond = it.content
+                }
             }
         }
 
@@ -121,111 +153,13 @@ fun MainScreen(
                     end.linkTo(parent.end)
                 }
         ) {
-            state.capture()
-            onPromptChatAdded(it)
-            prompt = it
-        }
-    }
-}
-
-@Composable
-fun PromptBoxContainer(
-    modifier: Modifier = Modifier,
-    onSendChatClickListener: (String) -> Unit
-) {
-    Row(
-        modifier = modifier
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, Color.Black),
-                    startY = 0f,
-                    endY = Float.POSITIVE_INFINITY
-                )
-            )
-            .padding(24.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        PromptBox(
-            onSendChatClickListener = { onSendChatClickListener(it) }
-        )
-    }
-}
-
-@Composable
-fun ChatItem(chat: AppState) {
-    AnimatedVisibility(chat.content.isNotEmpty()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(if (chat.isModel) Alignment.End else Alignment.Start)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 48f,
-                            topEnd = 48f,
-                            bottomStart = if (chat.isModel) 48f else 0f,
-                            bottomEnd = if (chat.isModel) 0f else 48f
-                        )
-                    )
-                    .background(if (chat.isModel) Color.Magenta else Color.White)
-                    .padding(16.dp)
+            Button(
+                onClick = {
+                    triggerStartToSpeech = true
+                }
             ) {
-                Text(
-                    text = chat.content,
-                    fontSize = 14.sp,
-                    color = if (chat.isModel) Color.White else Color.Black
-                )
+                Text("Click to talk")
             }
-        }
-    }
-}
-
-@Composable
-fun PromptBox(
-    onSendChatClickListener: (String) -> Unit
-) {
-    var chatBoxValue by remember { mutableStateOf(TextFieldValue("")) }
-
-    Row {
-        TextField(
-            value = chatBoxValue,
-            onValueChange = { newText -> chatBoxValue = newText },
-            shape = RoundedCornerShape(24.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent
-            ),
-            placeholder = { Text(text = "Write your prompt here...") },
-            modifier = Modifier
-                .weight(1f)
-                .padding(4.dp),
-        )
-        IconButton(
-            onClick = {
-                val msg = chatBoxValue.text
-                if (msg.isBlank()) return@IconButton
-
-                onSendChatClickListener(chatBoxValue.text)
-                chatBoxValue = TextFieldValue("")
-            },
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(Color.Magenta)
-                .align(Alignment.CenterVertically)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Send",
-                tint = Color.White,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp)
-                    .padding(start = 4.dp)
-            )
         }
     }
 }

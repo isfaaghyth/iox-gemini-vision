@@ -23,27 +23,20 @@ actual class PermissionManager actual constructor(
     @Composable
     override fun askPermission(permission: PermissionType) {
         val lifecycleOwner = LocalLifecycleOwner.current
-        
-        if (permission == PermissionType.Camera) {
-            val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
-            
-            LaunchedEffect(cameraPermissionState) {
-                val permissionResult = cameraPermissionState.status
-                if (!permissionResult.isGranted) {
-                    if (permissionResult.shouldShowRationale) {
-                        callback.onPermissionStatus(
-                            permission, PermissionStatus.Rationale
-                        )
-                    } else {
-                        lifecycleOwner.lifecycleScope.launch {
-                            cameraPermissionState.launchPermissionRequest()
-                        }
-                    }
+        val cameraPermissionState = rememberPermissionState(permission.map())
+
+        LaunchedEffect(cameraPermissionState) {
+            val permissionResult = cameraPermissionState.status
+            if (!permissionResult.isGranted) {
+                if (permissionResult.shouldShowRationale) {
+                    callback.onPermissionStatus(permission, PermissionStatus.Rationale)
                 } else {
-                    callback.onPermissionStatus(
-                        permission, PermissionStatus.Granted
-                    )
+                    lifecycleOwner.lifecycleScope.launch {
+                        cameraPermissionState.launchPermissionRequest()
+                    }
                 }
+            } else {
+                callback.onPermissionStatus(permission, PermissionStatus.Granted)
             }
         }
     }
@@ -51,12 +44,8 @@ actual class PermissionManager actual constructor(
     @OptIn(ExperimentalPermissionsApi::class)
     @Composable
     override fun isPermissionGranted(permission: PermissionType): Boolean {
-        return if (permission == PermissionType.Camera) {
-            val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
-            cameraPermissionState.status.isGranted
-        } else {
-            false
-        }
+        val cameraPermissionState = rememberPermissionState(permission.map())
+        return cameraPermissionState.status.isGranted
     }
 
     @Composable
@@ -68,6 +57,13 @@ actual class PermissionManager actual constructor(
             Uri.fromParts("package", context.packageName, null)
         ).also {
             context.startActivity(it)
+        }
+    }
+
+    private fun PermissionType.map(): String {
+        return when (this) {
+            PermissionType.Camera -> Manifest.permission.CAMERA
+            PermissionType.Audio -> Manifest.permission.RECORD_AUDIO
         }
     }
 }

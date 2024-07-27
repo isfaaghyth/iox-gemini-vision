@@ -12,26 +12,13 @@ data class ContentRequestBody(
 ) {
 
     companion object {
-        fun createTextOnlyRequest(text: String): String {
-            val body = ContentRequestBody(
-                contents = listOf(
-                    RequestContentItem(
-                        listOf(
-                            RequestContentPart(
-                                text = text
-                            )
-                        )
-                    )
-                )
-            )
-
-            return Json.encodeToString(body)
-        }
+        private const val PROMPT_NOTE = ". Pastikan, hindari simbol asterisk (jika ada)," +
+                "dan gunakan bahasa indonesia yang friendly."
 
         fun createTextAndImageAttachmentRequest(text: String, image: ByteArray): String {
             val parts = mutableListOf<RequestContentPart>()
             // command
-            parts.add(RequestContentPart(text = text + ". catatan, hindari simbol asterisk (jika ada), dan gunakan bahasa yang friendly."))
+            parts.add(RequestContentPart(text = text + PROMPT_NOTE))
             
             // attachment
             parts.add(

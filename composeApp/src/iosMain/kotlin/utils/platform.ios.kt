@@ -11,13 +11,13 @@ actual fun HideKeyboard() {} // TODO
 
 @Composable
 actual fun TextToSpeech(content: String) {
-    val utterance = AVSpeechUtterance(content)
-
-    utterance.voice = AVSpeechSynthesisVoice.voiceWithLanguage("id")
-    utterance.rate = 0.1f
-
-    val synthesizer = AVSpeechSynthesizer()
-    synthesizer.speakUtterance(utterance)
+//    val utterance = AVSpeechUtterance(content)
+//
+//    utterance.voice = AVSpeechSynthesisVoice.voiceWithLanguage("id")
+//    utterance.rate = 0.1f
+//
+//    val synthesizer = AVSpeechSynthesizer()
+//    synthesizer.speakUtterance(utterance)
 }
 
 actual object KtorLogging : Logger {

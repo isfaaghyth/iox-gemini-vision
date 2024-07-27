@@ -1,4 +1,4 @@
-package domain.usecase
+package domain.domain
 
 import domain.interactor.GeminiRepository
 import domain.mapper.GeminiMapper

@@ -10,6 +10,8 @@ import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.AVAuthorizationStatusAuthorized
 import platform.AVFoundation.AVAuthorizationStatusNotDetermined
 import platform.AVFoundation.AVAuthorizationStatusDenied
+import platform.AVFoundation.AVMediaType
+import platform.AVFoundation.AVMediaTypeAudio
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
@@ -23,21 +25,22 @@ actual class PermissionManager actual constructor(
         when(permission) {
             is PermissionType.Camera -> {
                 val status = remember { AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo) }
-                askCameraPermission(status, permission, callback)
+                askMediaPermissionByType(status, permission, callback)
             }
-            is PermissionType.None -> Unit
+            is PermissionType.Audio -> {
+                val status = remember { AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeAudio) }
+                askMediaPermissionByType(status, permission, callback)
+            }
         }
     }
 
     @Composable
     override fun isPermissionGranted(permission: PermissionType): Boolean {
-        return if (permission == PermissionType.Camera) {
-            val status: AVAuthorizationStatus =
-                remember { AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo) }
-            status == AVAuthorizationStatusAuthorized
-        } else {
-            false
+        val status: AVAuthorizationStatus = remember {
+            AVCaptureDevice.authorizationStatusForMediaType(permission.map())
         }
+
+        return status == AVAuthorizationStatusAuthorized
     }
 
     @Composable
@@ -47,8 +50,10 @@ actual class PermissionManager actual constructor(
         }
     }
 
-    private fun askCameraPermission(
-        status: AVAuthorizationStatus, permission: PermissionType, callback: PermissionCallback
+    private fun askMediaPermissionByType(
+        status: AVAuthorizationStatus,
+        permission: PermissionType,
+        callback: PermissionCallback
     ) {
         when (status) {
             AVAuthorizationStatusAuthorized -> {
@@ -56,7 +61,7 @@ actual class PermissionManager actual constructor(
             }
 
             AVAuthorizationStatusNotDetermined -> {
-                return AVCaptureDevice.Companion.requestAccessForMediaType(AVMediaTypeVideo) { isGranted ->
+                return AVCaptureDevice.Companion.requestAccessForMediaType(permission.map()) { isGranted ->
                     if (isGranted) {
                         callback.onPermissionStatus(permission, PermissionStatus.Granted)
                     } else {
@@ -70,6 +75,13 @@ actual class PermissionManager actual constructor(
             }
 
             else -> error("unknown error: status $status")
+        }
+    }
+
+    private fun PermissionType.map(): AVMediaType {
+        return when (this) {
+            PermissionType.Camera -> AVMediaTypeVideo
+            PermissionType.Audio -> AVMediaTypeAudio
         }
     }
 }
