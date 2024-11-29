@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.0"
+agp = "8.2.2"
 android-compileSdk = "34"
 android-minSdk = "24"
 android-targetSdk = "34"
@@ -11,11 +11,16 @@ androidx-espresso-core = "3.5.1"
 androidx-material = "1.11.0"
 androidx-test-junit = "1.1.5"
 androidx-lifecycle = "2.8.0-beta01"
-compose = "1.6.2"
-compose-plugin = "1.6.2"
+
+compose = "1.7.1"
+compose-multiplatform = "1.7.0"
+compose-hot-reload = "1.0.0-dev.28.1"
+
+kotlin = "2.0.21-firework.28"
+firework = "2.0.21-firework.28"
+
 navigation-compose = "2.7.0-alpha03"
 junit = "4.13.2"
-kotlin = "1.9.22"
 ktorfit = "2.0.0-beta1"
 ksp = "1.9.23-1.0.20"
 ktor = "2.3.10"
@@ -75,8 +80,13 @@ util-constraintlayout = { module = "tech.annexflow.compose:constraintlayout-comp
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
-jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinParcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "firework" }
+composeHotReload = { id = "org.jetbrains.compose-hot-reload", version.ref = "compose-hot-reload" }
+
 ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinx-serialization" }
