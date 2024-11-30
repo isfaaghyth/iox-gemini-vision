@@ -16,14 +16,25 @@ import androidx.navigation.compose.rememberNavController
 import di.Providers
 import ui.screen.MainScreen
 import ui.screen.PermissionScreen
-import ui.uimodel.AppEvent
+import utils.TextToSpeech
+import utils.speech.SpeechRecognition
 
 @Composable
 fun GeminiApp(
-    viewModel: AppViewModel = Providers.viewModel(),
+    speechRecognition: SpeechRecognition = Providers.speechRecognitionInstance(),
+    viewModel: GeminiViewModel = Providers.viewModel(),
     navController: NavHostController = rememberNavController()
 ) {
     val state by viewModel.state.collectAsState()
+    val effect by viewModel.globalEffect.collectAsState()
+
+    when (effect) {
+        is GeminiGlobalEffect.TriggerTextToSpeech -> {
+            val text = (effect as GeminiGlobalEffect.TriggerTextToSpeech).text
+            TextToSpeech(text)
+        }
+        is GeminiGlobalEffect.None -> Unit
+    }
 
     Scaffold { innerPadding ->
         NavHost(
@@ -36,9 +47,7 @@ fun GeminiApp(
         ) {
             composable(route = AppRoute.Permission.name) {
                 PermissionScreen(
-                    onCameraGranted = {
-                        navController.navigate(AppRoute.Main.name)
-                    },
+                    onCameraGranted = { navController.navigate(AppRoute.Main.name) },
                     shouldCloseApp = { /* TODO */ }
                 )
             }
@@ -46,15 +55,19 @@ fun GeminiApp(
             composable(route = AppRoute.Main.name) {
                 MainScreen(
                     chats = state.chats,
-                    onPromptChatAdded = {
-                        viewModel.sendAction(AppEvent.AddPromptInChatStack(it))
-                    },
-                    onListeningState = {
-                        viewModel.sendAction(AppEvent.StartToListen(it))
+                    speechRecognition = speechRecognition,
+                    onStartToSpeakClicked = { viewModel.sendAction(GeminiEvent.StartToSpeakClicked) },
+                    onPromptChatAdded = { viewModel.sideEffect(GeminiEffect.PromptStackAdded(it)) },
+                    onListeningState = { isAdded ->
+                        if (isAdded) {
+                            viewModel.sideEffect(GeminiEffect.ListenStackAdded)
+                        } else {
+                            viewModel.sideEffect(GeminiEffect.ListenStackRemoved)
+                        }
                     },
                     onPromptRequest = { byteArray, prompt ->
                         val byteArrayImage = byteArray ?: return@MainScreen
-                        viewModel.sendAction(AppEvent.RequestWithAttachment(prompt, byteArrayImage))
+                        viewModel.sideEffect(GeminiEffect.PromptRequested(prompt, byteArrayImage))
                     }
                 )
             }

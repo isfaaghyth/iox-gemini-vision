@@ -2,13 +2,13 @@ package utils
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
-import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import io.ktor.client.plugins.logging.Logger
 import java.util.Locale
+
+var tts: TextToSpeech? = null
 
 @Composable
 actual fun HideKeyboard() {
@@ -22,8 +22,6 @@ actual fun HideKeyboard() {
 actual fun TextToSpeech(content: String) {
     val context = LocalContext.current
 
-    var tts: TextToSpeech? = null
-
     val listener = TextToSpeech.OnInitListener { status ->
         if (status == TextToSpeech.SUCCESS) {
             val result = tts?.setLanguage(Locale("id", "ID"))
@@ -35,11 +33,4 @@ actual fun TextToSpeech(content: String) {
     }
 
     tts = TextToSpeech(context, listener)
-}
-
-actual object KtorLogging : Logger {
-
-    override fun log(message: String) {
-        Log.d("Ktorfit", message)
-    }
 }

@@ -1,7 +1,6 @@
 package utils.speech
 
-import androidx.compose.runtime.Composable
-
 interface SpeechRecognitionHandler {
-    @Composable fun onStartToSpeech()
+    fun onStartToSpeech()
+    fun observeListener(listener: SpeechRecognitionListener)
 }

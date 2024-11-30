@@ -1,4 +1,4 @@
-package ui.screen.component
+package ui.component
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -15,11 +15,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ui.uimodel.AppState
-import ui.uimodel.LoadingAppState
+import ui.UiState
+import ui.LoadingUiState
 
 @Composable
-fun ChatItem(chat: AppState) {
+fun ChatItem(chat: UiState) {
     AnimatedVisibility(chat.content.isNotEmpty()) {
         Column(
             modifier = Modifier
@@ -40,7 +40,7 @@ fun ChatItem(chat: AppState) {
                     .background(if (chat.isModel) Color(0xFF2f2f2f) else Color.White)
                     .padding(16.dp)
             ) {
-                if (chat is LoadingAppState) {
+                if (chat is LoadingUiState) {
                     ChatWaitingDots()
                 } else {
                     ChatText(chat.isModel, chat.content)

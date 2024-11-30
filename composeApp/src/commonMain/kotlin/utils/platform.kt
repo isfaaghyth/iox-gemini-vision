@@ -8,5 +8,3 @@ expect fun HideKeyboard()
 
 @Composable
 expect fun TextToSpeech(content: String)
-
-expect object KtorLogging : Logger

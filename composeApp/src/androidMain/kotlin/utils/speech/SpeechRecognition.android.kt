@@ -6,26 +6,26 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import java.util.Locale
 
-actual class SpeechRecognition actual constructor(
-    private val listener: SpeechRecognitionListener
-) : SpeechRecognitionHandler {
+actual class SpeechRecognition(private val context: Context) : SpeechRecognitionHandler {
 
     private var recognizer: SpeechRecognizer? = null
     private var intent: Intent? = null
+
+    private var listener: SpeechRecognitionListener? = null
 
     init {
         setupRecognizerIntent()
     }
 
-    @Composable
     override fun onStartToSpeech() {
-        val context = LocalContext.current
-
         onResetSpeechRecognizer(context)
         startListening()
+    }
+
+    override fun observeListener(listener: SpeechRecognitionListener) {
+        this.listener = listener
     }
 
     private fun startListening() {
@@ -35,6 +35,7 @@ actual class SpeechRecognition actual constructor(
     private fun setupRecognizerIntent() {
         intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         intent?.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, LOCALE)
+        intent?.putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf(LOCALE))
         intent?.putExtra(RecognizerIntent.EXTRA_LANGUAGE, LOCALE)
         intent?.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -50,7 +51,7 @@ actual class SpeechRecognition actual constructor(
         if (SpeechRecognizer.isRecognitionAvailable(context)) {
             recognizer?.setRecognitionListener(recognitionListener)
         } else {
-            listener.onError("Failed to instance Speech Recognizer," +
+            listener?.onError("Failed to instance Speech Recognizer," +
                     "please check permission nor audio input in your device.")
         }
     }
@@ -59,7 +60,7 @@ actual class SpeechRecognition actual constructor(
 
         override fun onBeginningOfSpeech() {
             sendDebugLog("onBeginningOfSpeech")
-            listener.onSpeechReady()
+            listener?.onSpeechReady()
         }
 
         override fun onBufferReceived(buffer: ByteArray?) {
@@ -69,16 +70,16 @@ actual class SpeechRecognition actual constructor(
         override fun onEndOfSpeech() {
             sendDebugLog("onEndOfSpeech")
             recognizer?.stopListening()
-            listener.onSpeechEnd()
+            listener?.onSpeechEnd()
         }
 
         override fun onError(error: Int) {
-            listener.onError(getErrorMessageBy(error))
+            listener?.onError(getErrorMessageBy(error))
         }
 
         override fun onResults(results: Bundle?) {
             if (results == null) {
-                listener.onError("Failed to get the voice result")
+                listener?.onError("Failed to get the voice result")
                 return
             }
 
@@ -87,10 +88,10 @@ actual class SpeechRecognition actual constructor(
             var resultAsString = ""
             for (result in matches) resultAsString += "$result ".trim()
             sendDebugLog(resultAsString)
-            listener.onResult(resultAsString)
+            listener?.onResult(resultAsString)
         }
 
-        override fun onPartialResults(partialResults: Bundle?) = Unit
+        override fun onPartialResults(results: Bundle?) = Unit
         override fun onEvent(eventType: Int, params: Bundle?) = Unit
         override fun onReadyForSpeech(params: Bundle?) = Unit
         override fun onRmsChanged(rmsdB: Float) = Unit

@@ -3,8 +3,6 @@ import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.ktorfit)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinxSerialization)
 
     kotlin("multiplatform")
@@ -56,16 +54,12 @@ kotlin {
             implementation(libs.androidx.camera.lifecycle)
             implementation(libs.androidx.camera.view)
             implementation(libs.koin.android)
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.accompanist.permissions)
         }
         commonMain.dependencies {
-            // Ktorfit
-            implementation(libs.ktorfit)
-            implementation(libs.ktorfit.converters.response)
-            implementation(libs.ktorfit.converters.call)
-            implementation(libs.ktorfit.converters.flow)
-            
             // Ktor
+            implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.serialization)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -96,20 +90,6 @@ kotlin {
             implementation(libs.peekaboo.ui)
             implementation(libs.util.constraintlayout)
         }
-    }
-}
-
-dependencies {
-    with("de.jensklingenberg.ktorfit:ktorfit-ksp:2.0.0-beta1") {
-        add("kspCommonMainMetadata", this)
-        add("kspAndroid", this)
-        add("kspAndroidTest", this)
-        add("kspIosX64", this)
-        add("kspIosX64Test", this)
-        add("kspIosArm64", this)
-        add("kspIosArm64Test", this)
-        add("kspIosSimulatorArm64", this)
-        add("kspIosSimulatorArm64Test", this)
     }
 }
 

@@ -1,9 +1,9 @@
 package di
 
+import data.api.GeminiApi
 import data.repository.GeminiRepositoryImpl
-import di.network.GeminiApi
-import domain.interactor.GeminiRepository
 import domain.domain.GetContentWithImageUseCase
+import domain.interactor.GeminiRepository
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
@@ -17,6 +17,6 @@ val domainModule = module {
 }
 
 val dataModule = module {
-    single<GeminiApi> { GeminiClient.app.create() }
+    single<GeminiApi> { GeminiApi.create() }
     single<GeminiRepository> { GeminiRepositoryImpl(get()) }
 }

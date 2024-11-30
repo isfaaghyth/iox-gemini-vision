@@ -22,75 +22,54 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.preat.peekaboo.ui.camera.PeekabooCamera
 import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
-import ui.screen.component.ChatItem
-import ui.screen.component.ChatWaitingDots
-import ui.screen.component.PromptBoxContainer
-import ui.uimodel.AppState
-import ui.uimodel.ChatItemModel
-import ui.uimodel.LoadingAppState
-import utils.TextToSpeech
+import ui.UiState
+import ui.component.ChatItem
+import ui.component.PromptBoxContainer
 import utils.speech.SpeechRecognition
 import utils.speech.SpeechRecognitionListener
-import kotlin.jvm.JvmInline
-
-@JvmInline
-value class IsAdded(val value: Boolean)
 
 @Composable
 fun MainScreen(
-    chats: List<AppState>,
+    chats: List<UiState>,
     modifier: Modifier = Modifier,
+    speechRecognition: SpeechRecognition,
+    onStartToSpeakClicked: () -> Unit,
     onPromptChatAdded: (String) -> Unit,
-    onListeningState: (IsAdded) -> Unit,
+    onListeningState: (Boolean) -> Unit,
     onPromptRequest: (ByteArray?, String) -> Unit
 ) {
     /**
-     * Both variables area to handled the speech recognition.
+     * These variables handled the speech recognition.
      */
-    var triggerStartToSpeech by rememberSaveable { mutableStateOf(false) }
     var speechResult by rememberSaveable { mutableStateOf("") }
-
-    // A state used to trigger to text-to-speech
-    var lastRespond by rememberSaveable { mutableStateOf("") }
 
     // Camera state to get ByteArray result
     val state = rememberPeekabooCameraState(
-        onCapture = {
-            onPromptRequest(it, speechResult)
-        }
+        onCapture = { onPromptRequest(it, speechResult) }
     )
 
     // Speech state for voice recognition
-    val speech = SpeechRecognition(object : SpeechRecognitionListener {
+    LaunchedEffect(Unit) {
+        speechRecognition.observeListener(
+            object : SpeechRecognitionListener {
 
-        override fun onSpeechReady() {
-            onListeningState(IsAdded(true))
-        }
+                override fun onSpeechReady() {
+                    onListeningState(true)
+                }
 
-        override fun onSpeechEnd() {
-            onListeningState(IsAdded(false))
-        }
+                override fun onSpeechEnd() {
+                    state.capture()
+                    onListeningState(false)
+                }
 
-        override fun onResult(result: String) {
-            speechResult = result
-            triggerStartToSpeech = false
+                override fun onResult(result: String) {
+                    speechResult = result
+                    onPromptChatAdded(result)
+                }
 
-            onPromptChatAdded(result)
-            state.capture()
-        }
-
-        override fun onError(message: String) {
-            triggerStartToSpeech = false
-        }
-    })
-
-    if (lastRespond.isNotEmpty()) {
-        TextToSpeech(lastRespond)
-        lastRespond = ""
-    }
-
-    if (triggerStartToSpeech) {
-        speech.onStartToSpeech()
+                override fun onError(message: String) {}
+            }
+        )
     }
 
     val listState = rememberLazyListState()
@@ -133,14 +112,7 @@ fun MainScreen(
                 horizontal = 18.dp
             )
         ) {
-            items(chats) {
-                ChatItem(it)
-
-                // trigger text to speech
-                if (it.isModel && it is ChatItemModel) {
-                    lastRespond = it.content
-                }
-            }
+            items(chats) { ChatItem(it) }
         }
 
         // PromptBox
@@ -153,12 +125,17 @@ fun MainScreen(
                     end.linkTo(parent.end)
                 }
         ) {
+
             Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
                 onClick = {
-                    triggerStartToSpeech = true
-                }
+                    speechRecognition.onStartToSpeech()
+                    onStartToSpeakClicked()
+                },
             ) {
-                Text("Click to talk")
+                Text(text = "Click to talk")
             }
         }
     }

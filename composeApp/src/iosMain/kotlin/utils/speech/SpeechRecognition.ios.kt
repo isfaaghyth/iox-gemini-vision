@@ -1,12 +1,9 @@
 package utils.speech
 
-import androidx.compose.runtime.Composable
-
-actual class SpeechRecognition actual constructor(
+actual class SpeechRecognition(
     private val listener: SpeechRecognitionListener
 ) : SpeechRecognitionHandler {
 
-    @Composable
     override fun onStartToSpeech() {
 
     }

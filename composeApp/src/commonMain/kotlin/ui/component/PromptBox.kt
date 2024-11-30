@@ -1,4 +1,4 @@
-package ui.screen.component
+package ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
@@ -40,8 +40,7 @@ fun PromptBoxContainer(
                     endY = Float.POSITIVE_INFINITY
                 )
             )
-            .padding(24.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(24.dp)
     ) {
         content()
     }

@@ -12,10 +12,9 @@ data class ContentRequestBody(
 ) {
 
     companion object {
-        private const val PROMPT_NOTE = ". Pastikan, hindari simbol asterisk (jika ada)," +
-                "dan gunakan bahasa indonesia yang friendly."
+        private const val PROMPT_NOTE = ". Gunakan Bahasa Indonesia yang ringkas saja tapi menyenangkan."
 
-        fun createTextAndImageAttachmentRequest(text: String, image: ByteArray): String {
+        fun requestBody(text: String, image: ByteArray): String {
             val parts = mutableListOf<RequestContentPart>()
             // command
             parts.add(RequestContentPart(text = text + PROMPT_NOTE))
